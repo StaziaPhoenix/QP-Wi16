@@ -1,5 +1,7 @@
 #ifndef grid_h
 #define grid_h
+#include "controller.h"
+
 
 class grid
 {

@@ -1,7 +1,7 @@
 #include "grid.h"
 #include "vibsens.h" 
 
-grid::grid(int col), int dlay)
+grid::grid(int col, int dlay)
 {
   numCol = col; 
   delay = dlay;
