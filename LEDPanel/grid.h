@@ -12,10 +12,13 @@ class grid
     void setData(int moveMode);
     int adjustData(int i, int moveMode);
     int getData(int i);
+    int left(int row, int col);
+    int right();
+    int up();
+    int down();
   private:
     int numCol;
     int delay;
-    int col[];
     int colInit[];
     int colData[];
 };

@@ -1,27 +1,26 @@
 #include "grid.h"
-//#include "controller.h"
+#include "controller.h"
 //#include "vibsens.h"
 
 /* shift register constants */
-const int latchPin = 13;
-const int clockPin = 11;
-const int dataPin = 9;
+const int clockPin = 22;
+const int latchPin = 23;
+const int dataPin = 24;
 
 /* delay times */
 int staticDelay = 1;
 int shockDelay = 30;
-int moveDelay = 100;
+int moveDelay = 50;
 
 /* flags */
 int moveMode = 1; // 0 for static mode, 1 for move mode
 
 /* Grid data */
-int numCol = 5;
-int numRow = 5;
-int col[5] = {2, 3, 4, 5, 6};
-int colData[5];
-
-grid matrix = grid(numCol, moveDelay);
+int numCol = 10;
+int numRow = 8;
+int col[10] = {30, 31, 32, 33, 34, 35, 36, 37, 38, 39};
+int colData[10] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+int curs[2] = {1, 1};
 
 /* sensor pins */
     // Joystick
@@ -32,9 +31,12 @@ int button = 8;
     // Vibration
 int vibrate;
 
+grid matrix = grid(numCol, moveDelay);
+controller joystick = controller(joyX, joyY, 0);
+
 void setup() {
   Serial.begin(9600);
-  
+
   // Prepare shift registers
   pinMode(latchPin, OUTPUT);
   pinMode(dataPin, OUTPUT);
@@ -57,103 +59,88 @@ void setup() {
     digitalWrite(latchPin,HIGH);
     delay(moveDelay);
     
-    digitalWrite(col[i], LOW); 
+    digitalWrite(col[i], LOW);
   }
 
   delay(300);
 }
 
+/* ------------------------------
+ *  Set colData to the appropriate mode - 
+ *  an LED for staticMode and the run for moveMode.
+ *  Then call matAct the apropriate number of times for the mode.
+ */
 void loop() {
-//      Serial.print("In loop... ");
-//      Serial.println(moveMode);
-//  // call set data to prepare colData[] for the correct mode
-//  // Then read the updated colData into the local version.
-//  matrix.setData(moveMode);
-//  for (int i = 0; i < numCol; i++) {
-//    digitalWrite(col[i], LOW);
-//    colData[i] = matrix.getData(i);
-//  }
-//  
-//  if (moveMode) {
-//    moveLoop();
-//  } else {
-//    staticLoop();
-//  }
-
-  int shockData1[5] = {0x1f, 0x19, 0x1F, 0x11, 0x1f};
-  int shockData2[5] = {0x11, 0x1f, 0x19, 0x1f, 0x11};
-  for (int i = 0; i < numCol; i++) {
-    digitalWrite(col[i],HIGH);          
-    
-    digitalWrite(latchPin,LOW);
-    shiftOut(dataPin,clockPin,MSBFIRST,shockData1[i]);
-    digitalWrite(latchPin,HIGH);
-    delay(shockDelay);
-    
-    digitalWrite(col[i], LOW); 
-  }
-  for (int i = 0; i < numCol; i++) {
-    digitalWrite(col[i],HIGH);          
-    
-    digitalWrite(latchPin,LOW);
-    shiftOut(dataPin,clockPin,MSBFIRST,shockData2[i]);
-    digitalWrite(latchPin,HIGH);
-    delay(shockDelay);
-    
-    digitalWrite(col[i], LOW); 
+  
+  /* call setData to prepare colData[] for the correct mode
+   * Then read the updated colData into the local version. */
+  if (moveMode) {
+//    matrix.setData(moveMode);
+//    for (int i = 0; i < numCol; i++) {
+//      digitalWrite(col[i], LOW);
+//      colData[i] = matrix.getData(i);
+//    }
+    colData[0] = 0x00;
+    colData[1] = 0x02;
+    moveLoop();
   }
 }
 
-/* -------------------------
- *  Constant behavior while in static mode
- * ----------------------- */
-void staticLoop() {
-  // check if we should switch mode. If yes, return to main loop  
-  for (int i = 0; i < numCol; i++) {
+void moveLoop() {
+  for (int i = 0; i < numCol; i++) { // current column
     digitalWrite(col[i],HIGH);   
-     
-    if (digitalRead(button) == LOW)  {
-      moveMode = moveMode^1;
-      Serial.print("In staticLoop... ");
-      Serial.println(moveMode);
-      delay(300);
-      return;
-    }   
+
+    /* check if we should switch mode. If yes, return to main loop */
+//      if (digitalRead(button) == LOW)  {
+//        moveMode = moveMode^1;
+//        Serial.print("In staticLoop... ");
+//        Serial.println(moveMode);
+//        delay(300);
+//        return;
+//      }
+    /* Adapt for joystick movements */
+    checkJoystick();
     
     digitalWrite(latchPin,LOW);
     shiftOut(dataPin,clockPin,MSBFIRST,colData[i]);
     digitalWrite(latchPin,HIGH);
-    delay(0);
+    delay(moveDelay);
     
-    digitalWrite(col[i], LOW); 
+    digitalWrite(col[i], LOW);
   }
 }
 
-/* -------------------------
- *  Constant behavior while in move mode
- * ----------------------- */
-void moveLoop() {
-  for (int i = 0; i < numRow; i++) { // current row
-    for (int j = 0; j < numCol; j++) { // current column
-      digitalWrite(col[j], HIGH);   
-      
-      // check if we should switch mode. If yes, return to main loop
-      if (digitalRead(button) == LOW)  {
-        moveMode = moveMode^1; 
-        Serial.print("In moveLoop... ");
-        Serial.println(moveMode);
-        delay(300);
-        return;
-      }
-     
-      digitalWrite(latchPin,LOW);
-      shiftOut(dataPin,clockPin,MSBFIRST,colData[j]);
-      digitalWrite(latchPin,HIGH);
-      delay(moveDelay);
-      
-      digitalWrite(col[j], LOW); 
+void checkJoystick() {
+  int orVal;
 
-      colData[j] = colData[j] << 1;
+  switch(curs[0]) {
+    case 0: orVal = 0x01; break;
+    case 1: orVal = 0x02; break;
+    case 2: orVal = 0x04; break;
+  }
+  if (joystick.moveLeft()) {
+//    matrix.left(curs[0], curs[1]);
+    if (curs[1] != 0) {
+      colData[curs[1]-1] = colData[curs[1]-1] | orVal;
+      Serial.println(colData[curs[1]-1]);
     }
+    Serial.println("Left");
   }
+//  if (joystick.moveRight()) {
+//    matrix.right();
+//    Serial.println("Right");
+//  }
+//  if (joystick.moveUp()) {
+//    matrix.up();
+//    Serial.println("Up");
+//  }
+//  if (joystick.moveDown()) {
+//    matrix.down();
+//    Serial.println("Down");
+//  }
+//  
+//  for (int i = 0; i < numCol; i++) {
+//    colData[i] = matrix.getData(i);
+//  }
 }
+
