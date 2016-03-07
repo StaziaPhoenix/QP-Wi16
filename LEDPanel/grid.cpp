@@ -37,19 +37,3 @@ void grid::setData(int moveMode) {
     colData[4] = 0x04;
 	}
 }
-
-int grid::left(int row, int col) {
-  
-}
-
-int grid::right() {
-  
-}
-
-int grid::up() {
-  
-}
-
-int grid::down() {
-  
-}
