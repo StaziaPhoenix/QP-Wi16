@@ -19,5 +19,8 @@ class controller
     int zMode(); 
 
   private:
+    int xPin;
+    int yPin;
+    int zPin;
 };
 #endif 

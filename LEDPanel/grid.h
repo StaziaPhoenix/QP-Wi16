@@ -15,7 +15,6 @@ class grid
   private:
     int numCol;
     int delay;
-    int col[];
     int colInit[];
     int colData[];
 };
